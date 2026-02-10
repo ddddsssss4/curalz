@@ -8,7 +8,7 @@ const ai = new GoogleGenAI({});
 export const generateEmbedding = async (text: string): Promise<number[]> => {
     try {
         const response = await ai.models.embedContent({
-            model: "text-embedding-004",
+            model: "gemini-embedding-001",
             contents: [
                 {
                     parts: [

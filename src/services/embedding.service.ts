@@ -17,7 +17,6 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
                 }
             ]
         });
-        console.log('Embedding Response:', JSON.stringify(response, null, 2));
 
         // Handle response structure from new SDK
         const embedding = response.embeddings?.[0]?.values;

@@ -350,6 +350,30 @@ paths:
                     items:
                       $ref: '#/components/schemas/User'
 
+  /caregiver/patient/link:
+    post:
+      summary: Link a patient to caregiver by email
+      tags: [Caregiver]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required: [email]
+      responses:
+        200:
+          description: Patient linked successfully
+        400:
+          description: Patient already linked or invalid request
+        404:
+          description: Patient not found
+
   /caregiver/patient/{id}/profile:
     get:
       summary: Get patient profile

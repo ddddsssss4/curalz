@@ -3,7 +3,8 @@ import {
     getPatients,
     getPatientProfile,
     updatePatientProfile,
-    getPatientActivity
+    getPatientActivity,
+    linkPatient
 } from '../controllers/caregiver.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -17,5 +18,6 @@ router.get('/patients', getPatients);
 router.get('/patient/:id/profile', getPatientProfile);
 router.put('/patient/:id/profile', updatePatientProfile);
 router.get('/patient/:id/activity', getPatientActivity);
+router.post('/patient/link', linkPatient);
 
 export default router;

@@ -112,3 +112,41 @@ export const getPatientActivity = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * Link a patient to caregiver by email
+ */
+export const linkPatient = async (req: AuthRequest, res: Response) => {
+    const { email } = req.body;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        const patient = await User.findOne({ email, role: 'patient' });
+        if (!patient) {
+            return res.status(404).json({ error: 'Patient not found with this email' });
+        }
+
+        // Check if already linked
+        if (req.user.linkedPatientIds.includes(patient._id)) {
+            return res.status(400).json({ error: 'Patient already linked' });
+        }
+
+        // Add to caregiver's linked list
+        req.user.linkedPatientIds.push(patient._id);
+        await req.user.save();
+
+        res.json({
+            message: 'Patient linked successfully',
+            patient: {
+                id: patient._id,
+                name: patient.name,
+                email: patient.email
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};

@@ -22,16 +22,15 @@ const UserSchema: Schema = new Schema({
 
 // Hash password before saving
 // Hash password before saving
-UserSchema.pre('save', async function (next: any) {
+UserSchema.pre('save', async function () {
     const user = this as any;
-    if (!user.isModified('password')) return next();
+    if (!user.isModified('password')) return;
 
     try {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
-        next();
     } catch (err: any) {
-        next(err);
+        throw err;
     }
 });
 

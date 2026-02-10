@@ -10,7 +10,7 @@ export const generateChatResponse = async (
     relevantMemories: Array<{ rawText: string; timestamp: Date }> = []
 ): Promise<string> => {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
         // Build context from memories
         let context = '';

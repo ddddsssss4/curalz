@@ -12,7 +12,7 @@ interface ExtractedEntities {
  */
 export const extractEntities = async (text: string): Promise<ExtractedEntities> => {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
         const prompt = `Extract people's names and activities from the following text. Return ONLY a JSON object with two arrays: "people" and "activities".
 

@@ -24,6 +24,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@google/genai": "^1.40.0",
     "@google/generative-ai": "^0.24.1",
     "@qdrant/js-client-rest": "^1.16.2",
     "mongodb": "^7.1.0",

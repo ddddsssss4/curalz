@@ -1,26 +1,14 @@
+import { GoogleGenAI } from "@google/genai";
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://saraswatdevesh98:devesh@n8n.0jeg1ur.mongodb.net/";
+// The client gets the API key from the environment variable `GEMINI_API_KEY`.
+const ai = new GoogleGenAI({});
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
+async function main() {
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: "Explain how AI works in a few words",
+  });
+  console.log(response.text);
 }
-run().catch(console.dir);
+
+main();

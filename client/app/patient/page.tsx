@@ -186,18 +186,18 @@ export default function PatientDashboard() {
                             <div className="space-y-2">
                                 <h3 className="text-sm font-semibold">Recent Memories</h3>
                                 <div className="max-h-96 space-y-2 overflow-y-auto">
-                                    {chatHistory.map((thought) => (
-                                        <Card key={thought._id} className="p-3">
+                                    {chatHistory.map((thought, index) => (
+                                        <Card key={thought._id || thought.qdrantId || `thought-${index}`} className="p-3">
                                             <p className="text-sm">{thought.rawText}</p>
                                             {thought.entities && (
                                                 <div className="mt-2 flex flex-wrap gap-1">
-                                                    {thought.entities.people?.map((person: string) => (
-                                                        <Badge key={person} variant="secondary">
+                                                    {thought.entities.people?.map((person: string, i: number) => (
+                                                        <Badge key={`person-${index}-${i}`} variant="secondary">
                                                             👤 {person}
                                                         </Badge>
                                                     ))}
-                                                    {thought.entities.activities?.map((activity: string) => (
-                                                        <Badge key={activity} variant="outline">
+                                                    {thought.entities.activities?.map((activity: string, i: number) => (
+                                                        <Badge key={`activity-${index}-${i}`} variant="outline">
                                                             ⚡ {activity}
                                                         </Badge>
                                                     ))}

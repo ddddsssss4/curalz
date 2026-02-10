@@ -19,7 +19,7 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
         });
 
         // Handle response structure from new SDK
-        const embedding = response.embedding?.values;
+        const embedding = response.embeddings?.[0]?.values;
 
         if (!embedding) {
             throw new Error("No embedding returned from API");

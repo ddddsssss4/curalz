@@ -1,7 +1,10 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({});
 
+/**
+ * Generate a chat response with context from retrieved memories
+ */
 /**
  * Generate a chat response with context from retrieved memories
  */
@@ -10,8 +13,6 @@ export const generateChatResponse = async (
     relevantMemories: Array<{ rawText: string; timestamp: Date }> = []
 ): Promise<string> => {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
-
         // Build context from memories
         let context = '';
         if (relevantMemories.length > 0) {
@@ -28,14 +29,16 @@ Your role is to:
 - Be conversational and warm
 ${context}`;
 
-        const result = await model.generateContent([
-            { text: systemPrompt },
-            { text: `User: ${userMessage}\nAssistant:` }
-        ]);
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [
+                { role: "user", parts: [{ text: systemPrompt + "\n\nUser: " + userMessage }] }
+            ]
+        });
 
-        return result.response.text();
+        return response.text || "I'm sorry, I couldn't generate a response.";
     } catch (error: any) {
-        console.error('Error generating chat response:', error.message);
+        console.error('Error generating chat response:', error);
         throw new Error(`Failed to generate response: ${error.message}`);
     }
 };

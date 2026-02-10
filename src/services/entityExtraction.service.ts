@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({});
 
 interface ExtractedEntities {
     people: string[];
@@ -10,10 +10,11 @@ interface ExtractedEntities {
 /**
  * Extract people and activities from text using Gemini
  */
+/**
+ * Extract people and activities from text using Gemini
+ */
 export const extractEntities = async (text: string): Promise<ExtractedEntities> => {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
-
         const prompt = `Extract people's names and activities from the following text. Return ONLY a JSON object with two arrays: "people" and "activities".
 
 Text: "${text}"
@@ -26,11 +27,17 @@ Example response format:
 
 JSON response:`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [
+                { role: "user", parts: [{ text: prompt }] }
+            ]
+        });
+
+        const responseText = response.text;
 
         // Parse JSON from response
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const jsonMatch = responseText?.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const entities = JSON.parse(jsonMatch[0]);
             return {
@@ -42,7 +49,7 @@ JSON response:`;
         // Fallback: return empty arrays
         return { people: [], activities: [] };
     } catch (error: any) {
-        console.error('Error extracting entities:', error.message);
+        console.error('Error extracting entities:', error);
         // Fallback to regex-based extraction
         return extractEntitiesRegex(text);
     }

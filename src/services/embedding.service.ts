@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({});
 
 /**
  * Generate text embedding using Gemini's embedding model
@@ -17,6 +17,7 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
                 }
             ]
         });
+        console.log('Embedding Response:', JSON.stringify(response, null, 2));
 
         // Handle response structure from new SDK
         const embedding = response.embeddings?.[0]?.values;

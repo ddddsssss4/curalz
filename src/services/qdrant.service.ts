@@ -5,7 +5,7 @@ const qdrantClient = new QdrantClient({
 });
 
 const COLLECTION_NAME = 'patient_memories';
-const VECTOR_SIZE = 768; // Gemini text-embedding-004 dimension
+const VECTOR_SIZE = 3072; // Gemini gemini-embedding-001 dimension
 
 /**
  * Initialize Qdrant collection

@@ -1,0 +1,114 @@
+import { Request, Response } from 'express';
+import User from '../models/User';
+import Thought from '../models/Thought';
+
+interface AuthRequest extends Request {
+    user?: any;
+}
+
+/**
+ * Get list of linked patients for caregiver
+ */
+export const getPatients = async (req: AuthRequest, res: Response) => {
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        const patients = await User.find({
+            _id: { $in: req.user.linkedPatientIds }
+        }).select('-password');
+
+        res.json({ patients });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Get patient profile
+ */
+export const getPatientProfile = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        // Check if patient is linked to this caregiver
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        const patient = await User.findById(id).select('-password');
+        if (!patient) {
+            return res.status(404).json({ error: 'Patient not found' });
+        }
+
+        res.json({ patient });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Update patient profile
+ */
+export const updatePatientProfile = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { name, email } = req.body;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        const patient = await User.findByIdAndUpdate(
+            id,
+            { name, email },
+            { new: true }
+        ).select('-password');
+
+        if (!patient) {
+            return res.status(404).json({ error: 'Patient not found' });
+        }
+
+        res.json({ patient });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Get patient activity (recent thoughts/conversations)
+ */
+export const getPatientActivity = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { limit = 10 } = req.query;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        const thoughts = await Thought.find({ userId: id })
+            .sort({ timestamp: -1 })
+            .limit(Number(limit));
+
+        res.json({
+            activity: thoughts,
+            count: thoughts.length
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};

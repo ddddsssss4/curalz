@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { authService, caregiverService } from '@/lib/services';
+import { authService, caregiverService, eventService } from '@/lib/services';
 
 export default function CaregiverDashboard() {
     const router = useRouter();
@@ -18,6 +19,15 @@ export default function CaregiverDashboard() {
     const [activity, setActivity] = useState<any[]>([]);
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Event creation for patient
+    const [eventForm, setEventForm] = useState({
+        title: '',
+        description: '',
+        datetime: '',
+        importance: 'medium' as 'low' | 'medium' | 'high',
+        reminderOffsets: [15],
+    });
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
@@ -85,7 +95,7 @@ export default function CaregiverDashboard() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                     {/* Patients List */}
-                    <Card>
+                    <Card className="md:col-span-2">
                         <CardHeader>
                             <CardTitle>My Patients</CardTitle>
                             <CardDescription>Manage your linked patients</CardDescription>
@@ -107,7 +117,7 @@ export default function CaregiverDashboard() {
                                 </div>
                             </form>
 
-                            <div className="space-y-2">
+                            <div className="grid gap-2 md:grid-cols-2">
                                 {patients.map((patient) => (
                                     <Card key={patient._id} className="p-3">
                                         <div className="flex items-center justify-between">
@@ -116,7 +126,7 @@ export default function CaregiverDashboard() {
                                                 <p className="text-sm text-neutral-500">{patient.email}</p>
                                             </div>
                                             <Button size="sm" onClick={() => viewActivity(patient)}>
-                                                View Activity
+                                                View
                                             </Button>
                                         </div>
                                     </Card>
@@ -129,41 +139,43 @@ export default function CaregiverDashboard() {
                     </Card>
 
                     {/* Patient Activity */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Patient Activity</CardTitle>
-                            <CardDescription>
-                                {selectedPatient ? `${selectedPatient.name}'s memories` : 'Select a patient'}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="max-h-96 space-y-2 overflow-y-auto">
-                                {activity.map((thought) => (
-                                    <Card key={thought._id} className="p-3">
-                                        <p className="text-sm">{thought.rawText}</p>
-                                        <p className="mt-1 text-xs text-neutral-500">
-                                            {new Date(thought.timestamp).toLocaleString()}
-                                        </p>
-                                        {thought.entities && (
-                                            <div className="mt-2 flex flex-wrap gap-1">
-                                                {thought.entities.people?.map((person: string) => (
-                                                    <Badge key={person} variant="secondary" className="text-xs">
-                                                        {person}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </Card>
-                                ))}
-                                {!selectedPatient && (
-                                    <p className="text-sm text-neutral-500">Select a patient to view their activity</p>
-                                )}
-                                {selectedPatient && activity.length === 0 && (
-                                    <p className="text-sm text-neutral-500">No activity yet</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {selectedPatient && (
+                        <Card className="md:col-span-2">
+                            <CardHeader>
+                                <CardTitle>Patient Activity: {selectedPatient.name}</CardTitle>
+                                <CardDescription>Recent memories and interactions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="max-h-96 space-y-2 overflow-y-auto">
+                                    {activity.map((thought) => (
+                                        <Card key={thought._id} className="p-3">
+                                            <p className="text-sm">{thought.rawText}</p>
+                                            <p className="mt-1 text-xs text-neutral-500">
+                                                {new Date(thought.timestamp).toLocaleString()}
+                                            </p>
+                                            {thought.entities && (
+                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                    {thought.entities.people?.map((person: string) => (
+                                                        <Badge key={person} variant="secondary" className="text-xs">
+                                                            👤 {person}
+                                                        </Badge>
+                                                    ))}
+                                                    {thought.entities.activities?.map((activity: string) => (
+                                                        <Badge key={activity} variant="outline" className="text-xs">
+                                                            ⚡ {activity}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </Card>
+                                    ))}
+                                    {activity.length === 0 && (
+                                        <p className="text-sm text-neutral-500">No activity yet</p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>

@@ -1,20 +1,33 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 /**
  * Generate text embedding using Gemini's embedding model
  */
 export const generateEmbedding = async (text: string): Promise<number[]> => {
     try {
-        const model = genAI.getGenerativeModel({ model: 'embedding-001' });
+        const response = await ai.models.embedContent({
+            model: "text-embedding-004",
+            contents: [
+                {
+                    parts: [
+                        { text: text }
+                    ]
+                }
+            ]
+        });
 
-        const result = await model.embedContent(text);
-        const embedding = result.embedding;
+        // Handle response structure from new SDK
+        const embedding = response.embedding?.values;
 
-        return embedding.values;
+        if (!embedding) {
+            throw new Error("No embedding returned from API");
+        }
+
+        return embedding;
     } catch (error: any) {
-        console.error('Error generating embedding:', error.message);
+        console.error('Error generating embedding:', error);
         throw new Error(`Failed to generate embedding: ${error.message}`);
     }
 };

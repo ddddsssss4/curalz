@@ -74,6 +74,10 @@ export const caregiverService = {
         const response = await api.post('/caregiver/patient/link', { email });
         return response.data;
     },
+    addMemory: async (patientId: string, message: string) => {
+        const response = await api.post(`/caregiver/patient/${patientId}/memory`, { message });
+        return response.data;
+    },
 
     getPatients: async () => {
         const response = await api.get('/caregiver/patients');

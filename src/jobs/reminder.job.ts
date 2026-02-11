@@ -19,7 +19,7 @@ const checkReminders = cron.schedule('* * * * *', async () => {
             datetime: { $gte: now },
             reminderStatus: 'pending'
         }).populate('userId', 'email name');
-
+        console.log(upcomingEvents);
         for (const event of upcomingEvents) {
             const timeDiff = event.datetime.getTime() - now.getTime();
             const minutesUntil = Math.floor(timeDiff / 1000 / 60);

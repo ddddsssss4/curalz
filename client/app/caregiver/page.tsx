@@ -19,6 +19,8 @@ export default function CaregiverDashboard() {
     const [activity, setActivity] = useState<any[]>([]);
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
+    const [memoryInput, setMemoryInput] = useState('');
+    const [addingMemory, setAddingMemory] = useState(false);
 
     // Event creation for patient
     const [eventForm, setEventForm] = useState({
@@ -69,6 +71,24 @@ export default function CaregiverDashboard() {
             setActivity(data.activity || []);
         } catch (error) {
             console.error('Error loading activity:', error);
+        }
+    };
+
+    const addMemory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!memoryInput.trim() || !selectedPatient) return;
+
+        setAddingMemory(true);
+        try {
+            await caregiverService.addMemory(selectedPatient._id, memoryInput);
+            setMemoryInput('');
+            // Refresh activity
+            const data = await caregiverService.getPatientActivity(selectedPatient._id);
+            setActivity(data.activity || []);
+        } catch (error) {
+            console.error('Error adding memory:', error);
+        } finally {
+            setAddingMemory(false);
         }
     };
 
@@ -146,6 +166,22 @@ export default function CaregiverDashboard() {
                                 <CardDescription>Recent memories and interactions</CardDescription>
                             </CardHeader>
                             <CardContent>
+                                {/* Add Memory Section */}
+                                <Card className="mb-4 bg-blue-50/50 border-blue-100">
+                                    <CardContent className="p-3">
+                                        <form onSubmit={addMemory} className="flex gap-2">
+                                            <Input
+                                                placeholder={`Add a memory for ${selectedPatient.name}... (e.g., "Mom enjoyed her lunch")`}
+                                                value={memoryInput}
+                                                onChange={(e) => setMemoryInput(e.target.value)}
+                                            />
+                                            <Button type="submit" disabled={addingMemory}>
+                                                {addingMemory ? 'Adding...' : 'Add Memory'}
+                                            </Button>
+                                        </form>
+                                    </CardContent>
+                                </Card>
+
                                 <div className="max-h-96 space-y-2 overflow-y-auto">
                                     {activity.map((thought) => (
                                         <Card key={thought._id} className="p-3">

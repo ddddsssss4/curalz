@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import Thought from '../models/Thought';
 
+import { extractEntities } from '../services/entityExtraction.service';
+import { generateEmbedding } from '../services/embedding.service';
+import { storeVector } from '../services/qdrant.service';
+import { v4 as uuidv4 } from 'uuid';
+
 interface AuthRequest extends Request {
     user?: any;
 }
@@ -145,6 +150,59 @@ export const linkPatient = async (req: AuthRequest, res: Response) => {
                 name: patient.name,
                 email: patient.email
             }
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Add a memory for a patient
+ */
+export const addMemoryForPatient = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // 1. Generate embedding
+        const embedding = await generateEmbedding(message);
+
+        // 2. Extract entities
+        const entities = await extractEntities(message);
+
+        // 3. Store in MongoDB
+        const qdrantId = uuidv4();
+        const thought = await Thought.create({
+            userId: id,
+            rawText: message,
+            entities,
+            qdrantId,
+            timestamp: new Date()
+        });
+
+        // 4. Store in Qdrant
+        await storeVector(qdrantId, embedding, {
+            userId: id.toString(),
+            rawText: message,
+            timestamp: new Date(),
+            entities
+        });
+
+        res.json({
+            message: 'Memory added successfully',
+            thought
         });
     } catch (error: any) {
         res.status(500).json({ error: error.message });

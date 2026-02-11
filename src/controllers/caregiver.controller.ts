@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import Thought from '../models/Thought';
+import Event from '../models/Event';
 
 import { extractEntities } from '../services/entityExtraction.service';
 import { generateEmbedding } from '../services/embedding.service';
@@ -204,6 +205,38 @@ export const addMemoryForPatient = async (req: AuthRequest, res: Response) => {
             message: 'Memory added successfully',
             thought
         });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Create an event for a patient
+ */
+export const createEventForPatient = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { title, description, datetime, importance, reminderOffsets } = req.body;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        const event = await Event.create({
+            userId: id,
+            title,
+            description,
+            datetime,
+            importance,
+            reminderOffsets: reminderOffsets || [15],
+            reminderStatus: 'pending'
+        });
+
+        res.status(201).json({ event });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

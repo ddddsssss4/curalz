@@ -5,7 +5,8 @@ import {
     updatePatientProfile,
     getPatientActivity,
     linkPatient,
-    addMemoryForPatient
+    addMemoryForPatient,
+    createEventForPatient
 } from '../controllers/caregiver.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -20,6 +21,7 @@ router.get('/patient/:id/profile', getPatientProfile);
 router.put('/patient/:id/profile', updatePatientProfile);
 router.get('/patient/:id/activity', getPatientActivity);
 router.post('/patient/link', linkPatient);
-router.post('/patient/:id/memory', addMemoryForPatient); // Added this route
+router.post('/patient/:id/memory', addMemoryForPatient);
+router.post('/patient/:id/event', createEventForPatient);
 
 export default router;

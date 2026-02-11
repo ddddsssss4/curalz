@@ -21,6 +21,7 @@ export default function CaregiverDashboard() {
     const [loading, setLoading] = useState(false);
     const [memoryInput, setMemoryInput] = useState('');
     const [addingMemory, setAddingMemory] = useState(false);
+    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
     // Event creation for patient
     const [eventForm, setEventForm] = useState({
@@ -89,6 +90,27 @@ export default function CaregiverDashboard() {
             console.error('Error adding memory:', error);
         } finally {
             setAddingMemory(false);
+        }
+    };
+
+    const createPatientEvent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedPatient) return;
+
+        try {
+            await caregiverService.createEvent(selectedPatient._id, eventForm);
+            setEventForm({
+                title: '',
+                description: '',
+                datetime: '',
+                importance: 'medium',
+                reminderOffsets: [15],
+            });
+            setIsEventModalOpen(false);
+            // Could refresh activity if events were shown there, or show success toast
+            alert('Event created successfully!');
+        } catch (error) {
+            console.error('Error creating event:', error);
         }
     };
 
@@ -162,8 +184,69 @@ export default function CaregiverDashboard() {
                     {selectedPatient && (
                         <Card className="md:col-span-2">
                             <CardHeader>
-                                <CardTitle>Patient Activity: {selectedPatient.name}</CardTitle>
-                                <CardDescription>Recent memories and interactions</CardDescription>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle>Patient Activity: {selectedPatient.name}</CardTitle>
+                                        <CardDescription>Recent memories and interactions</CardDescription>
+                                    </div>
+                                    <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline">📅 Create Event</Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Create Event for {selectedPatient.name}</DialogTitle>
+                                            </DialogHeader>
+                                            <form onSubmit={createPatientEvent} className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label>Title</Label>
+                                                    <Input
+                                                        required
+                                                        value={eventForm.title}
+                                                        onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                                                        placeholder="Doctor Appointment"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Description</Label>
+                                                    <Textarea
+                                                        value={eventForm.description}
+                                                        onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                                                        placeholder="Dr. Smith checkup"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Date & Time</Label>
+                                                    <Input
+                                                        type="datetime-local"
+                                                        required
+                                                        value={eventForm.datetime}
+                                                        onChange={(e) => setEventForm({ ...eventForm, datetime: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Importance</Label>
+                                                    <div className="flex gap-2">
+                                                        {(['low', 'medium', 'high'] as const).map((level) => (
+                                                            <Button
+                                                                key={level}
+                                                                type="button"
+                                                                variant={eventForm.importance === level ? 'default' : 'outline'}
+                                                                onClick={() => setEventForm({ ...eventForm, importance: level })}
+                                                                className="flex-1"
+                                                            >
+                                                                {level}
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <Button type="submit" className="w-full">
+                                                    Create Event
+                                                </Button>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {/* Add Memory Section */}

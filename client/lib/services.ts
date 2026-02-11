@@ -78,14 +78,16 @@ export const caregiverService = {
         const response = await api.post(`/caregiver/patient/${patientId}/memory`, { message });
         return response.data;
     },
-
+    createEvent: async (patientId: string, eventData: any) => {
+        const response = await api.post(`/caregiver/patient/${patientId}/event`, eventData);
+        return response.data;
+    },
     getPatients: async () => {
         const response = await api.get('/caregiver/patients');
         return response.data;
     },
-
     getPatientActivity: async (patientId: string, limit = 10) => {
         const response = await api.get(`/caregiver/patient/${patientId}/activity?limit=${limit}`);
         return response.data;
-    },
+    }
 };

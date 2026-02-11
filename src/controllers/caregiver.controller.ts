@@ -242,3 +242,81 @@ export const createEventForPatient = async (req: AuthRequest, res: Response) => 
         res.status(500).json({ error: error.message });
     }
 };
+
+/**
+ * Get all events for a patient
+ */
+export const getPatientEvents = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        const events = await Event.find({ userId: id }).sort({ datetime: 1 });
+        res.json({ events });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Update a patient event
+ */
+export const updatePatientEvent = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params; // Event ID
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        const event = await Event.findById(id);
+        if (!event) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        // Verify that the event belongs to a patient linked to this caregiver
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === event.userId.toString())) {
+            return res.status(403).json({ error: 'Not authorized to edit this event' });
+        }
+
+        const updatedEvent = await Event.findByIdAndUpdate(id, req.body, { new: true });
+        res.json({ event: updatedEvent });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Delete a patient event
+ */
+export const deletePatientEvent = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params; // Event ID
+
+    try {
+        if (req.user.role !== 'caregiver') {
+            return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        const event = await Event.findById(id);
+        if (!event) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        // Verify authorization
+        if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === event.userId.toString())) {
+            return res.status(403).json({ error: 'Not authorized to delete this event' });
+        }
+
+        await Event.findByIdAndDelete(id);
+        res.json({ message: 'Event deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};

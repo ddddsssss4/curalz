@@ -82,6 +82,18 @@ export const caregiverService = {
         const response = await api.post(`/caregiver/patient/${patientId}/event`, eventData);
         return response.data;
     },
+    getEvents: async (patientId: string) => {
+        const response = await api.get(`/caregiver/patient/${patientId}/events`);
+        return response.data;
+    },
+    updateEvent: async (eventId: string, eventData: any) => {
+        const response = await api.put(`/caregiver/event/${eventId}`, eventData);
+        return response.data;
+    },
+    deleteEvent: async (eventId: string) => {
+        const response = await api.delete(`/caregiver/event/${eventId}`);
+        return response.data;
+    },
     getPatients: async () => {
         const response = await api.get('/caregiver/patients');
         return response.data;

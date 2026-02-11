@@ -6,7 +6,10 @@ import {
     getPatientActivity,
     linkPatient,
     addMemoryForPatient,
-    createEventForPatient
+    createEventForPatient,
+    getPatientEvents,
+    updatePatientEvent,
+    deletePatientEvent
 } from '../controllers/caregiver.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -23,5 +26,8 @@ router.get('/patient/:id/activity', getPatientActivity);
 router.post('/patient/link', linkPatient);
 router.post('/patient/:id/memory', addMemoryForPatient);
 router.post('/patient/:id/event', createEventForPatient);
+router.get('/patient/:id/events', getPatientEvents);
+router.put('/event/:id', updatePatientEvent);
+router.delete('/event/:id', deletePatientEvent);
 
 export default router;

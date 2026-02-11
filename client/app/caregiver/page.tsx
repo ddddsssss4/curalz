@@ -21,7 +21,10 @@ export default function CaregiverDashboard() {
     const [loading, setLoading] = useState(false);
     const [memoryInput, setMemoryInput] = useState('');
     const [addingMemory, setAddingMemory] = useState(false);
+
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+    const [patientEvents, setPatientEvents] = useState<any[]>([]);
+    const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
     // Event creation for patient
     const [eventForm, setEventForm] = useState({
@@ -68,10 +71,14 @@ export default function CaregiverDashboard() {
     const viewActivity = async (patient: any) => {
         setSelectedPatient(patient);
         try {
-            const data = await caregiverService.getPatientActivity(patient._id);
-            setActivity(data.activity || []);
+            const [activityData, eventsData] = await Promise.all([
+                caregiverService.getPatientActivity(patient._id),
+                caregiverService.getEvents(patient._id)
+            ]);
+            setActivity(activityData.activity || []);
+            setPatientEvents(eventsData.events || []);
         } catch (error) {
-            console.error('Error loading activity:', error);
+            console.error('Error loading patient data:', error);
         }
     };
 
@@ -98,7 +105,15 @@ export default function CaregiverDashboard() {
         if (!selectedPatient) return;
 
         try {
-            await caregiverService.createEvent(selectedPatient._id, eventForm);
+            if (editingEventId) {
+                await caregiverService.updateEvent(editingEventId, eventForm);
+                alert('Event updated successfully!');
+            } else {
+                await caregiverService.createEvent(selectedPatient._id, eventForm);
+                alert('Event created successfully!');
+            }
+
+            // Reset form
             setEventForm({
                 title: '',
                 description: '',
@@ -106,12 +121,51 @@ export default function CaregiverDashboard() {
                 importance: 'medium',
                 reminderOffsets: [15],
             });
+            setEditingEventId(null);
             setIsEventModalOpen(false);
-            // Could refresh activity if events were shown there, or show success toast
-            alert('Event created successfully!');
+
+            // Refresh events
+            const eventsData = await caregiverService.getEvents(selectedPatient._id);
+            setPatientEvents(eventsData.events || []);
         } catch (error) {
-            console.error('Error creating event:', error);
+            console.error('Error saving event:', error);
         }
+    };
+
+    const deletePatientEvent = async (eventId: string) => {
+        if (!confirm('Are you sure you want to delete this event?')) return;
+        try {
+            await caregiverService.deleteEvent(eventId);
+            // Refresh events
+            const eventsData = await caregiverService.getEvents(selectedPatient._id);
+            setPatientEvents(eventsData.events || []);
+        } catch (error) {
+            console.error('Error deleting event:', error);
+        }
+    };
+
+    const openCreateModal = () => {
+        setEditingEventId(null);
+        setEventForm({
+            title: '',
+            description: '',
+            datetime: '',
+            importance: 'medium',
+            reminderOffsets: [15],
+        });
+        setIsEventModalOpen(true);
+    };
+
+    const openEditModal = (event: any) => {
+        setEditingEventId(event._id);
+        setEventForm({
+            title: event.title,
+            description: event.description || '',
+            datetime: new Date(event.datetime).toISOString().slice(0, 16), // Format for input type="datetime-local"
+            importance: event.importance,
+            reminderOffsets: event.reminderOffsets || [15],
+        });
+        setIsEventModalOpen(true);
     };
 
     const logout = () => {
@@ -191,11 +245,11 @@ export default function CaregiverDashboard() {
                                     </div>
                                     <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline">📅 Create Event</Button>
+                                            <Button variant="outline" onClick={openCreateModal}>📅 Create Event</Button>
                                         </DialogTrigger>
                                         <DialogContent>
                                             <DialogHeader>
-                                                <DialogTitle>Create Event for {selectedPatient.name}</DialogTitle>
+                                                <DialogTitle>{editingEventId ? 'Edit Event' : 'Create Event'} for {selectedPatient.name}</DialogTitle>
                                             </DialogHeader>
                                             <form onSubmit={createPatientEvent} className="space-y-4">
                                                 <div className="space-y-2">
@@ -241,7 +295,7 @@ export default function CaregiverDashboard() {
                                                     </div>
                                                 </div>
                                                 <Button type="submit" className="w-full">
-                                                    Create Event
+                                                    {editingEventId ? 'Update Event' : 'Create Event'}
                                                 </Button>
                                             </form>
                                         </DialogContent>
@@ -291,6 +345,39 @@ export default function CaregiverDashboard() {
                                     {activity.length === 0 && (
                                         <p className="text-sm text-neutral-500">No activity yet</p>
                                     )}
+                                </div>
+
+                                {/* Events List */}
+                                <div className="mt-6">
+                                    <h3 className="text-lg font-semibold mb-2">Upcoming Events</h3>
+                                    <div className="space-y-2">
+                                        {patientEvents.map((event) => (
+                                            <Card key={event._id} className="p-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">{event.title}</h4>
+                                                        <p className="text-xs text-neutral-500">
+                                                            {new Date(event.datetime).toLocaleString()}
+                                                        </p>
+                                                        <Badge className="mt-1 text-[10px]" variant={event.importance === 'high' ? 'destructive' : 'secondary'}>
+                                                            {event.importance}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditModal(event)}>
+                                                            ✏️
+                                                        </Button>
+                                                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500 hover:text-red-600" onClick={() => deletePatientEvent(event._id)}>
+                                                            ✕
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                        {patientEvents.length === 0 && (
+                                            <p className="text-sm text-neutral-500">No upcoming events</p>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

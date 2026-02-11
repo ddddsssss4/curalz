@@ -233,7 +233,8 @@ export const createEventForPatient = async (req: AuthRequest, res: Response) => 
             datetime,
             importance,
             reminderOffsets: reminderOffsets || [15],
-            reminderStatus: 'pending'
+            reminderStatus: 'pending',
+            createdBy: req.user._id
         });
 
         res.status(201).json({ event });

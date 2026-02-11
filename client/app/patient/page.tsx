@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,13 @@ export default function PatientDashboard() {
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [aiResponse, setAiResponse] = useState('');
+    const [reminderAlert, setReminderAlert] = useState<any>(null);
+    const eventsRef = useRef<any[]>([]);
+
+    // Keep ref in sync with state for polling
+    useEffect(() => {
+        eventsRef.current = events;
+    }, [events]);
 
     // Event creation
     const [eventForm, setEventForm] = useState({
@@ -40,7 +47,48 @@ export default function PatientDashboard() {
         }
         setUser(currentUser);
         loadData();
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Poll for reminders every 10 seconds
+        const interval = setInterval(async () => {
+            try {
+                const latestEvents = await eventService.getAll();
+
+                // Compare with previous events to find NEWly sent reminders
+                latestEvents.forEach((newEvent: any) => {
+                    const oldEvent = eventsRef.current.find((e: any) => e._id === newEvent._id);
+                    // If visual status changed from pending -> sent, OR if we just want to catch any 'sent' event that we haven't acknowledged (simplified: just status change)
+                    if (oldEvent && oldEvent.reminderStatus === 'pending' && newEvent.reminderStatus === 'sent') {
+                        triggerReminder(newEvent);
+                    }
+                });
+
+                // Update state and ref
+                setEvents(latestEvents);
+            } catch (err) {
+                console.error('Polling error:', err);
+            }
+        }, 10000);
+
+        return () => clearInterval(interval);
     }, [router]);
+
+    const triggerReminder = (event: any) => {
+        // 1. Browser Notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('⏰ Event Reminder', {
+                body: `${event.title} is happening soon!`,
+                icon: '/favicon.ico'
+            });
+        }
+
+        // 2. In-App Modal
+        setReminderAlert(event);
+    };
 
     const loadData = async () => {
         try {
@@ -340,6 +388,41 @@ export default function PatientDashboard() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Reminder Alert Dialog */}
+                <Dialog open={!!reminderAlert} onOpenChange={() => setReminderAlert(null)}>
+                    <DialogContent className="sm:max-w-[425px] border-l-4 border-l-red-500">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-red-600">
+                                ⏰ Reminder Alert!
+                            </DialogTitle>
+                            <CardDescription>
+                                {new Date().toLocaleTimeString()}
+                            </CardDescription>
+                        </DialogHeader>
+                        {reminderAlert && (
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <h3 className="font-bold text-lg">{reminderAlert.title}</h3>
+                                    <p className="text-sm text-neutral-500">
+                                        {new Date(reminderAlert.datetime).toLocaleString()}
+                                    </p>
+                                </div>
+                                {reminderAlert.description && (
+                                    <p className="text-neutral-700 bg-neutral-100 p-3 rounded-md">
+                                        {reminderAlert.description}
+                                    </p>
+                                )}
+                                <Button
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={() => setReminderAlert(null)}
+                                >
+                                    Acknowledge
+                                </Button>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );

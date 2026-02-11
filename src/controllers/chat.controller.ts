@@ -118,11 +118,32 @@ export const searchMemories = async (req: AuthRequest, res: Response) => {
         const qdrantIds = results.map(r => r.id);
         const thoughts = await Thought.find({ qdrantId: { $in: qdrantIds } });
 
+        const searchResults = thoughts.map((t, i) => ({
+            thought: t,
+            score: results.find(r => r.id === t.qdrantId)?.score || 0
+        }));
+
+        // Generate AI summary from found memories
+        const relevantMemories = searchResults
+            .filter(r => r.score > 0.4)
+            .map(r => ({
+                rawText: r.thought.rawText,
+                timestamp: r.thought.timestamp
+            }));
+
+        let summary = '';
+        if (relevantMemories.length > 0) {
+            summary = await generateChatResponse(
+                `The patient is searching their memories for: "${query}". Summarize what you found in their memories about this topic. Be warm and helpful.`,
+                relevantMemories
+            );
+        } else {
+            summary = `I couldn't find any memories related to "${query}". Try a different search term!`;
+        }
+
         res.json({
-            results: thoughts.map((t, i) => ({
-                thought: t,
-                score: results.find(r => r.id === t.qdrantId)?.score || 0
-            }))
+            summary,
+            results: searchResults
         });
     } catch (error: any) {
         console.error('Error searching memories:', error);

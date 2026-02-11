@@ -18,6 +18,7 @@ export default function PatientDashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [chatHistory, setChatHistory] = useState<any[]>([]);
     const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchSummary, setSearchSummary] = useState('');
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [aiResponse, setAiResponse] = useState('');
@@ -77,6 +78,7 @@ export default function PatientDashboard() {
 
         try {
             const results = await chatService.search(searchQuery);
+            setSearchSummary(results.summary || '');
             setSearchResults(results.results || []);
         } catch (error) {
             console.error('Error searching:', error);
@@ -169,14 +171,37 @@ export default function PatientDashboard() {
                                 <Button type="submit">Search</Button>
                             </form>
 
+                            {searchSummary && (
+                                <Card className="bg-green-50 border-green-200">
+                                    <CardContent className="p-4">
+                                        <p className="text-sm font-semibold text-green-900 mb-2">Search Summary:</p>
+                                        <p className="text-sm text-green-800">{searchSummary}</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+
                             {searchResults.length > 0 && (
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-semibold">Search Results</h3>
-                                    {searchResults.map((result: any) => (
-                                        <Card key={result.id} className="p-3">
-                                            <p className="text-sm">{result.payload?.rawText}</p>
+                                    <h3 className="text-sm font-semibold">Related Memories</h3>
+                                    {searchResults.map((result: any, index: number) => (
+                                        <Card key={result.thought?._id || `search-${index}`} className="p-3">
+                                            <p className="text-sm">{result.thought?.rawText}</p>
+                                            {result.thought?.entities && (
+                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                    {result.thought.entities.people?.map((person: string, i: number) => (
+                                                        <Badge key={`sp-${index}-${i}`} variant="secondary">
+                                                            👤 {person}
+                                                        </Badge>
+                                                    ))}
+                                                    {result.thought.entities.activities?.map((act: string, i: number) => (
+                                                        <Badge key={`sa-${index}-${i}`} variant="outline">
+                                                            ⚡ {act}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
                                             <p className="text-xs text-neutral-500 mt-1">
-                                                Score: {result.score?.toFixed(3)}
+                                                {new Date(result.thought?.timestamp).toLocaleString()} · Relevance: {(result.score * 100).toFixed(0)}%
                                             </p>
                                         </Card>
                                     ))}

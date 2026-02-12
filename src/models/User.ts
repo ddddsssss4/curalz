@@ -15,7 +15,7 @@ const UserSchema: Schema = new Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['patient', 'caregiver'], required: true },
-    linkedPatientIds: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    linkedPatientIds: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
 }, {
     timestamps: true,
 });

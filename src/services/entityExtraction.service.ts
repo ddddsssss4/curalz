@@ -7,12 +7,7 @@ interface ExtractedEntities {
     activities: string[];
 }
 
-/**
- * Extract people and activities from text using Gemini
- */
-/**
- * Extract people and activities from text using Gemini
- */
+
 export const extractEntities = async (text: string): Promise<ExtractedEntities> => {
     try {
         const prompt = `Extract people's names and activities from the following text. Return ONLY a JSON object with two arrays: "people" and "activities".

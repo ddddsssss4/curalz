@@ -42,6 +42,11 @@ export const getPatientProfile = async (req: AuthRequest, res: Response) => {
             return res.status(403).json({ error: 'Only caregivers can access this' });
         }
 
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
+        }
+
         // Check if patient is linked to this caregiver
         if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
             return res.status(403).json({ error: 'Patient not linked to this caregiver' });
@@ -68,6 +73,11 @@ export const updatePatientProfile = async (req: AuthRequest, res: Response) => {
     try {
         if (req.user.role !== 'caregiver') {
             return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
         }
 
         if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
@@ -100,6 +110,11 @@ export const getPatientActivity = async (req: AuthRequest, res: Response) => {
     try {
         if (req.user.role !== 'caregiver') {
             return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
         }
 
         if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
@@ -135,6 +150,11 @@ export const linkPatient = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ error: 'Patient not found with this email' });
         }
 
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
+        }
+
         // Check if already linked
         if (req.user.linkedPatientIds.includes(patient._id)) {
             return res.status(400).json({ error: 'Patient already linked' });
@@ -167,6 +187,16 @@ export const addMemoryForPatient = async (req: AuthRequest, res: Response) => {
     try {
         if (req.user.role !== 'caregiver') {
             return res.status(403).json({ error: 'Only caregivers can access this' });
+        }
+
+        console.log('🔍 DEBUG addMemoryForPatient:');
+        console.log('  Patient ID from params:', id);
+        console.log('  req.user.linkedPatientIds:', req.user.linkedPatientIds);
+        console.log('  req.user object:', JSON.stringify(req.user, null, 2));
+
+        // Defensive check: Initialize linkedPatientIds if undefined
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
         }
 
         if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
@@ -254,6 +284,11 @@ export const getPatientEvents = async (req: AuthRequest, res: Response) => {
             return res.status(403).json({ error: 'Only caregivers can access this' });
         }
 
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
+        }
+
         if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
             return res.status(403).json({ error: 'Patient not linked to this caregiver' });
         }
@@ -279,6 +314,11 @@ export const updatePatientEvent = async (req: AuthRequest, res: Response) => {
         const event = await Event.findById(id);
         if (!event) {
             return res.status(404).json({ error: 'Event not found' });
+        }
+
+        // Defensive check: Check if event belongs to linked patient
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
         }
 
         // Verify that the event belongs to a patient linked to this caregiver
@@ -307,6 +347,11 @@ export const deletePatientEvent = async (req: AuthRequest, res: Response) => {
         const event = await Event.findById(id);
         if (!event) {
             return res.status(404).json({ error: 'Event not found' });
+        }
+
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
         }
 
         // Verify authorization

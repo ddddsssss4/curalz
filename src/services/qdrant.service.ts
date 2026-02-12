@@ -7,9 +7,7 @@ const qdrantClient = new QdrantClient({
 const COLLECTION_NAME = 'patient_memories';
 const VECTOR_SIZE = 3072; // Gemini gemini-embedding-001 dimension
 
-/**
- * Initialize Qdrant collection
- */
+
 export const initializeQdrant = async () => {
     try {
         // Check if collection exists
@@ -104,9 +102,7 @@ export const searchSimilarMemories = async (
     }
 };
 
-/**
- * Delete a vector by ID
- */
+
 export const deleteVector = async (id: string): Promise<void> => {
     try {
         await qdrantClient.delete(COLLECTION_NAME, {

@@ -2,18 +2,13 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({});
 
-/**
- * Generate a chat response with context from retrieved memories
- */
-/**
- * Generate a chat response with context from retrieved memories
- */
+
 export const generateChatResponse = async (
     userMessage: string,
     relevantMemories: Array<{ rawText: string; timestamp: Date }> = []
 ): Promise<string> => {
     try {
-        // Build context from memories
+       
         let context = '';
         if (relevantMemories.length > 0) {
             context = '\n\nRelevant memories:\n' + relevantMemories

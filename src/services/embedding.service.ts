@@ -2,9 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({});
 
-/**
- * Generate text embedding using Gemini's embedding model
- */
+
 export const generateEmbedding = async (text: string): Promise<number[]> => {
     try {
         const response = await ai.models.embedContent({

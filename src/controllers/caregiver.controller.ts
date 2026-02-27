@@ -252,8 +252,26 @@ export const createEventForPatient = async (req: AuthRequest, res: Response) => 
             return res.status(403).json({ error: 'Only caregivers can access this' });
         }
 
+        // Defensive check
+        if (!req.user.linkedPatientIds) {
+            req.user.linkedPatientIds = [];
+        }
+
+        console.log('🔍 DEBUG createEventForPatient:');
+        console.log('  Target Patient ID:', id);
+        console.log('  Caregiver Linked IDs:', req.user.linkedPatientIds);
+
         if (!req.user.linkedPatientIds.some((pid: any) => pid.toString() === id)) {
-            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+            console.log('  ❌ Auth Failed: ID not found in linked list');
+            return res.status(403).json({
+                error: 'Patient not linked to this caregiver',
+                debug: {
+                    requestedId: id,
+                    linkedIds: req.user.linkedPatientIds,
+                    idType: typeof id,
+                    linkedTypes: req.user.linkedPatientIds.map((p: any) => typeof p)
+                }
+            });
         }
 
         const event = await Event.create({

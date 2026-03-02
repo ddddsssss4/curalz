@@ -5,16 +5,19 @@ const qdrantClient = new QdrantClient({
     url: process.env.QDRANT_URL || '',
     apiKey: process.env.QDRANT_API_KEY
 });
-  
+
 const COLLECTION_NAME = 'patient_memories';
-const VECTOR_SIZE = 3072; // Gemini gemini-embedding-001 dimension
+const VECTOR_SIZE = 3072; // gemini-embedding-001 dimension
 
-
+/**
+ * Initialize Qdrant collection and payload index
+ */
 export const initializeQdrant = async () => {
     try {
-        // Check if collection exists
         const collections = await qdrantClient.getCollections();
-        const exists = collections.collections.some(c => c.name === COLLECTION_NAME);
+        const exists = collections.collections.some(
+            (c) => c.name === COLLECTION_NAME
+        );
 
         if (!exists) {
             await qdrantClient.createCollection(COLLECTION_NAME, {
@@ -23,10 +26,25 @@ export const initializeQdrant = async () => {
                     distance: 'Cosine'
                 }
             });
+
             console.log(`Qdrant collection "${COLLECTION_NAME}" created`);
         } else {
             console.log(`Qdrant collection "${COLLECTION_NAME}" already exists`);
         }
+
+        // 🔥 Ensure payload index for filtering by userId
+        try {
+            await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+                field_name: 'userId',
+                field_schema: 'keyword'
+            });
+
+            console.log('Payload index for userId ensured');
+        } catch (indexError: any) {
+            // Ignore error if index already exists
+            console.log('Payload index already exists or cannot be created again');
+        }
+
     } catch (error: any) {
         console.error('Error initializing Qdrant:', error.message);
         throw error;
@@ -50,6 +68,12 @@ export const storeVector = async (
     }
 ): Promise<void> => {
     try {
+        if (vector.length !== VECTOR_SIZE) {
+            throw new Error(
+                `Vector dimension mismatch. Expected ${VECTOR_SIZE}, got ${vector.length}`
+            );
+        }
+
         await qdrantClient.upsert(COLLECTION_NAME, {
             wait: true,
             points: [
@@ -60,8 +84,9 @@ export const storeVector = async (
                 }
             ]
         });
+
     } catch (error: any) {
-        console.error('Error storing vector:', error.message);
+        console.error('Error storing vector:', JSON.stringify(error, null, 2));
         throw error;
     }
 };
@@ -73,14 +98,32 @@ export const searchSimilarMemories = async (
     queryVector: number[],
     userId: string,
     limit: number = 5
-): Promise<Array<{
-    id: string;
-    score: number;
-    payload: any;
-}>> => {
+): Promise<
+    Array<{
+        id: string;
+        score: number;
+        payload: any;
+    }>
+> => {
     try {
+        if (queryVector.length !== VECTOR_SIZE) {
+            throw new Error(
+                `Query vector dimension mismatch. Expected ${VECTOR_SIZE}, got ${queryVector.length}`
+            );
+        }
+
+        // 🔥 Prevent searching empty collection
+        const countResult = await qdrantClient.count(COLLECTION_NAME, {
+            exact: true
+        });
+
+        if (countResult.count === 0) {
+            return [];
+        }
+
         const searchResult = await qdrantClient.search(COLLECTION_NAME, {
             vector: queryVector,
+            limit,
             filter: {
                 must: [
                     {
@@ -89,22 +132,24 @@ export const searchSimilarMemories = async (
                     }
                 ]
             },
-            limit,
             with_payload: true
         });
 
-        return searchResult.map(result => ({
+        return searchResult.map((result) => ({
             id: result.id as string,
             score: result.score,
             payload: result.payload
         }));
+
     } catch (error: any) {
-        console.error('Error searching vectors:', error.message);
+        console.error('Error searching vectors:', JSON.stringify(error, null, 2));
         throw error;
     }
 };
 
-
+/**
+ * Delete a vector by ID
+ */
 export const deleteVector = async (id: string): Promise<void> => {
     try {
         await qdrantClient.delete(COLLECTION_NAME, {
@@ -112,7 +157,7 @@ export const deleteVector = async (id: string): Promise<void> => {
             points: [id]
         });
     } catch (error: any) {
-        console.error('Error deleting vector:', error.message);
+        console.error('Error deleting vector:', JSON.stringify(error, null, 2));
         throw error;
     }
 };

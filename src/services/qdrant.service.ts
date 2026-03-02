@@ -1,9 +1,11 @@
+import 'dotenv/config';
 import { QdrantClient } from '@qdrant/js-client-rest';
 
 const qdrantClient = new QdrantClient({
-    url: process.env.QDRANT_URL || 'http://localhost:6333'
+    url: process.env.QDRANT_URL || '',
+    apiKey: process.env.QDRANT_API_KEY
 });
-
+  
 const COLLECTION_NAME = 'patient_memories';
 const VECTOR_SIZE = 3072; // Gemini gemini-embedding-001 dimension
 

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { authService, caregiverService, eventService } from '@/lib/services';
+import { authService, caregiverService, eventService, mediaService } from '@/lib/services';
 
 export default function CaregiverDashboard() {
     const router = useRouter();
@@ -21,6 +21,7 @@ export default function CaregiverDashboard() {
     const [loading, setLoading] = useState(false);
     const [memoryInput, setMemoryInput] = useState('');
     const [addingMemory, setAddingMemory] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [patientEvents, setPatientEvents] = useState<any[]>([]);
@@ -84,12 +85,26 @@ export default function CaregiverDashboard() {
 
     const addMemory = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!memoryInput.trim() || !selectedPatient) return;
+        if ((!memoryInput.trim() && !selectedFile) || !selectedPatient) return;
 
         setAddingMemory(true);
         try {
-            await caregiverService.addMemory(selectedPatient._id, memoryInput);
+            let mediaData;
+            if (selectedFile) {
+                const { signedUrl, publicUrl, mediaType } = await mediaService.getUploadUrl(selectedFile.name, selectedFile.type);
+                await mediaService.uploadToSupabase(signedUrl, selectedFile);
+                mediaData = {
+                    imageUrl: publicUrl,
+                    mediaType,
+                    mimeType: selectedFile.type
+                };
+            }
+
+            await caregiverService.addMemory(selectedPatient._id, memoryInput, mediaData);
+            
             setMemoryInput('');
+            setSelectedFile(null);
+            
             // Refresh activity
             const data = await caregiverService.getPatientActivity(selectedPatient._id);
             setActivity(data.activity || []);
@@ -304,20 +319,28 @@ export default function CaregiverDashboard() {
                             </CardHeader>
                             <CardContent>
                                 {/* Add Memory Section */}
-                                <Card className="mb-4 bg-blue-50/50 border-blue-100">
-                                    <CardContent className="p-3">
-                                        <form onSubmit={addMemory} className="flex gap-2">
+                            <Card className="mb-4 bg-blue-50/50 border-blue-100">
+                                <CardContent className="p-3">
+                                    <form onSubmit={addMemory} className="flex flex-col gap-2">
+                                        <div className="flex gap-2 w-full">
                                             <Input
-                                                placeholder={`Add a memory for ${selectedPatient.name}... (e.g., "Mom enjoyed her lunch")`}
+                                                placeholder={`Add a memory for ${selectedPatient.name}...`}
                                                 value={memoryInput}
                                                 onChange={(e) => setMemoryInput(e.target.value)}
                                             />
-                                            <Button type="submit" disabled={addingMemory}>
+                                            <Input 
+                                                type="file" 
+                                                accept="image/*,video/*"
+                                                className="w-auto cursor-pointer"
+                                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                            />
+                                            <Button type="submit" disabled={addingMemory || (!memoryInput.trim() && !selectedFile)}>
                                                 {addingMemory ? 'Adding...' : 'Add Memory'}
                                             </Button>
-                                        </form>
-                                    </CardContent>
-                                </Card>
+                                        </div>
+                                    </form>
+                                </CardContent>
+                            </Card>
 
                                 <div className="max-h-96 space-y-2 overflow-y-auto">
                                     {activity.map((thought) => (

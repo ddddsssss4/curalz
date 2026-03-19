@@ -65,6 +65,8 @@ export const storeVector = async (
             people?: string[];
             activities?: string[];
         };
+        imageUrl?: string;
+        mediaType?: "image" | "video";
     }
 ): Promise<void> => {
     try {

@@ -137,10 +137,13 @@ export const caregiverService = {
     const response = await api.post("/caregiver/patient/link", { email });
     return response.data;
   },
-  addMemory: async (patientId: string, message: string) => {
-    const response = await api.post(`/caregiver/patient/${patientId}/memory`, {
-      message,
-    });
+  addMemory: async (
+    patientId: string, 
+    message: string, 
+    mediaData?: { imageUrl: string, mediaType: string, mimeType: string }
+  ) => {
+    const payload = mediaData ? { message, ...mediaData } : { message };
+    const response = await api.post(`/caregiver/patient/${patientId}/memory`, payload);
     return response.data;
   },
   createEvent: async (patientId: string, eventData: unknown) => {
@@ -172,4 +175,24 @@ export const caregiverService = {
     );
     return response.data;
   },
+};
+
+export const mediaService = {
+  getUploadUrl: async (fileName: string, mimeType: string) => {
+    const response = await api.post("/media/upload-url", { fileName, mimeType });
+    return response.data;
+  },
+  uploadToSupabase: async (signedUrl: string, file: File) => {
+    const response = await fetch(signedUrl, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to upload file to storage");
+    }
+    return response;
+  }
 };

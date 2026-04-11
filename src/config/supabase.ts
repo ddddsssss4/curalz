@@ -1,0 +1,8 @@
+import { createClient } from "@supabase/supabase-js";
+
+export const MEDIA_BUCKET = "Curlaz-Bucket";
+
+export const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_PUBLISHABLE_KEY!,
+);

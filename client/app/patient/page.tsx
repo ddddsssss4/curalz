@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { authService, chatService, eventService } from "@/lib/services";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function PatientDashboard() {
   const router = useRouter();
@@ -34,6 +36,7 @@ export default function PatientDashboard() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState("");
+  const [aiImages, setAiImages] = useState<string[]>([]);
   const [reminderAlert, setReminderAlert] = useState<any>(null);
   const eventsRef = useRef<any[]>([]);
 
@@ -127,12 +130,14 @@ export default function PatientDashboard() {
 
     setLoading(true);
     setAiResponse("");
+    setAiImages([]);
     try {
       await chatService.sendMessageStream(
         message,
         (chunk) => setAiResponse((prev) => prev + chunk),
-        (meta) => {
+        (meta: any) => {
           if (meta.thought) setChatHistory((prev) => [meta.thought, ...prev]);
+          if (meta.imageUrls) setAiImages(meta.imageUrls);
         },
       );
       setMessage("");
@@ -231,7 +236,19 @@ export default function PatientDashboard() {
                     <p className="text-sm font-semibold text-blue-900 mb-2">
                       AI Response:
                     </p>
-                    <p className="text-sm text-blue-800">{aiResponse}</p>
+                    <div className="text-sm text-blue-900 markdown-body prose-sm prose-img:rounded-xl prose-img:mt-2">
+                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {aiResponse}
+                      </ReactMarkdown>
+                    </div>
+                    {aiImages.length > 0 && (
+                      <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+                        {aiImages.map((url, i) => (
+                           // eslint-disable-next-line @next/next/no-img-element
+                           <img key={i} src={url} alt="Memory" className="h-32 w-32 object-cover rounded-md shadow-sm border border-blue-100" />
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -266,6 +283,12 @@ export default function PatientDashboard() {
                       className="p-3"
                     >
                       <p className="text-sm">{result.thought?.rawText}</p>
+                      {result.thought?.imageUrl && (
+                        <div className="mt-2">
+                           {/* eslint-disable-next-line @next/next/no-img-element */}
+                           <img src={result.thought.imageUrl} alt="Memory media" className="max-h-48 rounded-md object-cover" />
+                        </div>
+                      )}
                       {result.thought?.entities && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {result.thought.entities.people?.map(
@@ -307,6 +330,12 @@ export default function PatientDashboard() {
                       className="p-3"
                     >
                       <p className="text-sm">{thought.rawText}</p>
+                      {thought.imageUrl && (
+                        <div className="mt-2">
+                           {/* eslint-disable-next-line @next/next/no-img-element */}
+                           <img src={thought.imageUrl} alt="Memory" className="max-h-48 rounded-md object-cover" />
+                        </div>
+                      )}
                       {thought.entities && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {thought.entities.people?.map(

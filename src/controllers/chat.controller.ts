@@ -64,6 +64,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
       },
       response: aiResponse,
       relevantMemories: relevantMemories.length,
+      imageUrls: similarMemories.map((m) => m.payload.imageUrl).filter(Boolean),
     });
   } catch (error: any) {
     console.error("Error in sendMessage:", error);
@@ -116,6 +117,7 @@ export const sendMessageStream = async (req: AuthRequest, res: Response) => {
         timestamp,
       },
       relevantMemories: similarMemories.length,
+      imageUrls: similarMemories.map((m) => m.payload.imageUrl).filter(Boolean),
     });
 
     const relevantMemories = similarMemories.map((m) => ({

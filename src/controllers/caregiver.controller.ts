@@ -6,7 +6,6 @@ import Event from '../models/Event';
 import { extractEntities } from '../services/entityExtraction.service';
 import { generateEmbedding } from '../services/embedding.service';
 import { storeVector } from '../services/qdrant.service';
-import { captionImage } from '../services/vision.service';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthRequest extends Request {
@@ -208,17 +207,10 @@ export const addMemoryForPatient = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Message or Media is required' });
         }
 
-        // If an image is provided but no message, or we want to append the vision caption
+        // If an image is provided but no message
         let rawText = message || "";
         if (imageUrl && mediaType === 'image') {
-            try {
-                const autoCaption = await captionImage(imageUrl, mimeType || 'image/jpeg');
-                rawText = rawText ? `${rawText}\n\n[Auto-caption]: ${autoCaption}` : autoCaption;
-            } catch (visionError) {
-                console.error("Vision API Error:", visionError);
-                // Fallback if vision fails
-                if (!rawText) rawText = "A memory captured in this image.";
-            }
+            if (!rawText) rawText = "A memory captured in this image.";
         }
         
         if (imageUrl && mediaType === 'video' && !rawText) {

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
-import Thought from "../models/Thought";
+import Memory from "../models/Memory";
 import { generateEmbedding } from "../services/embedding.service";
 import { searchSimilarMemories } from "../services/qdrant.service";
 import {
@@ -34,7 +34,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
     );
 
     const relevantMemories = similarMemories.map((m) => ({
-      rawText: m.payload.rawText,
+      rawText: m.payload.searchableText || m.payload.rawText,
       timestamp: m.payload.timestamp,
     }));
 
@@ -121,7 +121,7 @@ export const sendMessageStream = async (req: AuthRequest, res: Response) => {
     });
 
     const relevantMemories = similarMemories.map((m) => ({
-      rawText: m.payload.rawText,
+      rawText: m.payload.searchableText || m.payload.rawText,
       timestamp: m.payload.timestamp,
     }));
 
@@ -167,7 +167,7 @@ export const getChatHistory = async (req: AuthRequest, res: Response) => {
   const { limit = 20, skip = 0 } = req.query;
 
   try {
-    const thoughts = await Thought.find({ userId })
+    const thoughts = await Memory.find({ userId, type: "chat" })
       .sort({ timestamp: -1 })
       .limit(Number(limit))
       .skip(Number(skip));
@@ -202,21 +202,28 @@ export const searchMemories = async (req: AuthRequest, res: Response) => {
     );
 
     const qdrantIds = results.map((r) => r.id);
-    const thoughts = await timer.measure("mongodb:fetchThoughts", () =>
-      Thought.find({ qdrantId: { $in: qdrantIds } }),
+    const memories = await timer.measure("mongodb:fetchMemories", () =>
+      Memory.find({ qdrantId: { $in: qdrantIds } }),
     );
 
-    const searchResults = thoughts.map((t) => ({
-      thought: t,
-      score: results.find((r) => r.id === t.qdrantId)?.score || 0,
+    const searchResults = memories.map((m) => ({
+      thought: m, // keeping thought property for frontend compatibility
+      score: results.find((r) => r.id === m.qdrantId)?.score || 0,
     }));
 
     const relevantMemories = searchResults
       .filter((r) => r.score > 0.4)
-      .map((r) => ({
-        rawText: r.thought.rawText,
-        timestamp: r.thought.timestamp,
-      }));
+      .map((r) => {
+        let textContent = r.thought.data?.rawText || "";
+        if (r.thought.type === "photo") textContent = `Photo: ${r.thought.title} (${r.thought.year}) - ${r.thought.data?.caption}`;
+        if (r.thought.type === "story") textContent = `Story: ${r.thought.title} (${r.thought.year}) - ${r.thought.data?.description}`;
+        if (r.thought.type === "place") textContent = `Place: ${r.thought.data?.placeName} at ${r.thought.data?.address} - ${r.thought.data?.description}`;
+
+        return {
+          rawText: textContent,
+          timestamp: r.thought.timestamp,
+        };
+      });
 
     let summary = "";
     if (relevantMemories.length > 0) {

@@ -3,7 +3,7 @@ import { redisConnection } from "./redis.connection";
 import { THOUGHT_QUEUE_NAME, ThoughtJobData } from "./thought.queue";
 import { extractEntities } from "../services/entityExtraction.service";
 import { storeVector } from "../services/qdrant.service";
-import Thought from "../models/Thought";
+import Memory from "../models/Memory";
 
 const processThought = async (job: Job<ThoughtJobData>) => {
   const { qdrantId, userId, rawText, embedding, timestamp } = job.data;
@@ -24,15 +24,21 @@ const processThought = async (job: Job<ThoughtJobData>) => {
   }
 
   // Step 2 — MongoDB write
+  let memoryId = "";
   {
     const t = performance.now();
-    await Thought.create({
+    const memory = await Memory.create({
       userId,
-      rawText,
-      entities,
       qdrantId,
+      type: "chat",
+      createdBy: "patient",
       timestamp: new Date(timestamp),
+      data: {
+        rawText,
+        entities,
+      }
     });
+    memoryId = memory._id.toString();
     console.log(`  ✔ [worker] mongodb:storeThought → ${(performance.now() - t).toFixed(2)}ms`);
   }
 
@@ -41,6 +47,9 @@ const processThought = async (job: Job<ThoughtJobData>) => {
     const t = performance.now();
     await storeVector(qdrantId, embedding, {
       userId,
+      memoryId,
+      type: "chat",
+      searchableText: rawText,
       rawText,
       timestamp: new Date(timestamp),
       entities,

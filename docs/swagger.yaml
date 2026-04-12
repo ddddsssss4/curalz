@@ -68,29 +68,25 @@ components:
         - datetime
         - importance
 
-    Thought:
+    Memory:
       type: object
       properties:
         id:
           type: string
-        rawText:
+        userId:
           type: string
-        entities:
+        type:
+          type: string
+          enum: [chat, photo, story, place]
+        data:
           type: object
-          properties:
-            people:
-              type: array
-              items:
-                type: string
-            activities:
-              type: array
-              items:
-                type: string
+          description: Flexible object containing type-specific data (e.g., photo caption, story mood, rawText for chat)
         timestamp:
           type: string
           format: date-time
       required:
-        - rawText
+        - userId
+        - type
 
 paths:
   /auth/register:
@@ -265,8 +261,8 @@ paths:
               schema:
                 type: object
                 properties:
-                  thought:
-                    $ref: '#/components/schemas/Thought'
+                  memory:
+                    $ref: '#/components/schemas/Memory'
                   response:
                     type: string
                   relevantMemories:
@@ -297,10 +293,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  thoughts:
+                  memories:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Thought'
+                      $ref: '#/components/schemas/Memory'
 
   /chat/search:
     post:
@@ -443,7 +439,133 @@ paths:
                   activity:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Thought'
+                      $ref: '#/components/schemas/Memory'
+
+  /caregiver/patient/{id}/memory:
+    post:
+      summary: Add a general (chat) memory for a patient
+      tags: [Caregiver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              required: [message]
+      responses:
+        201:
+          description: Memory added
+
+  /caregiver/patient/{id}/memory/photo:
+    post:
+      summary: Add a photo memory for a patient
+      tags: [Caregiver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                year:
+                  type: string
+                category:
+                  type: string
+                imageUrl:
+                  type: string
+                caption:
+                  type: string
+              required: [title, year, imageUrl]
+      responses:
+        201:
+          description: Photo memory added
+
+  /caregiver/patient/{id}/memory/story:
+    post:
+      summary: Add a story memory for a patient
+      tags: [Caregiver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                year:
+                  type: string
+                description:
+                  type: string
+                mood:
+                  type: string
+              required: [title, year, description]
+      responses:
+        201:
+          description: Story memory added
+
+  /caregiver/patient/{id}/memory/place:
+    post:
+      summary: Add a place memory for a patient
+      tags: [Caregiver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                placeName:
+                  type: string
+                address:
+                  type: string
+                category:
+                  type: string
+                description:
+                  type: string
+                photoUrl:
+                  type: string
+              required: [placeName]
+      responses:
+        201:
+          description: Place memory added
 
   /conversation/query:
     post:

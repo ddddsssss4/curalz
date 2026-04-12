@@ -6,6 +6,9 @@ import {
     getPatientActivity,
     linkPatient,
     addMemoryForPatient,
+    addPhotoMemoryForPatient,
+    addStoryMemoryForPatient,
+    addPlaceMemoryForPatient,
     createEventForPatient,
     getPatientEvents,
     updatePatientEvent,
@@ -24,7 +27,10 @@ router.get('/patient/:id/profile', getPatientProfile);
 router.put('/patient/:id/profile', updatePatientProfile);
 router.get('/patient/:id/activity', getPatientActivity);
 router.post('/patient/link', linkPatient);
-router.post('/patient/:id/memory', addMemoryForPatient);
+router.post('/patient/:id/memory', addMemoryForPatient); // Legacy / chat memory
+router.post('/patient/:id/memory/photo', addPhotoMemoryForPatient);
+router.post('/patient/:id/memory/story', addStoryMemoryForPatient);
+router.post('/patient/:id/memory/place', addPlaceMemoryForPatient);
 router.post('/patient/:id/event', createEventForPatient);
 router.get('/patient/:id/events', getPatientEvents);
 router.put('/event/:id', updatePatientEvent);

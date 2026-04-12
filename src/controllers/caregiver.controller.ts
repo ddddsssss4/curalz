@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
-import Thought from '../models/Thought';
+import Memory from '../models/Memory';
 import Event from '../models/Event';
 
 import { extractEntities } from '../services/entityExtraction.service';
@@ -121,13 +121,13 @@ export const getPatientActivity = async (req: AuthRequest, res: Response) => {
             return res.status(403).json({ error: 'Patient not linked to this caregiver' });
         }
 
-        const thoughts = await Thought.find({ userId: id })
+        const memories = await Memory.find({ userId: id, type: "chat" })
             .sort({ timestamp: -1 })
             .limit(Number(limit));
 
         res.json({
-            activity: thoughts,
-            count: thoughts.length
+            activity: memories,
+            count: memories.length
         });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -225,21 +225,27 @@ export const addMemoryForPatient = async (req: AuthRequest, res: Response) => {
 
         // 3. Store in MongoDB
         const qdrantId = uuidv4();
-        const thought = await Thought.create({
+        const memory = await Memory.create({
             userId: id,
-            rawText,
-            entities,
             qdrantId,
+            type: "chat",
+            createdBy: "caregiver",
             timestamp: new Date(),
-            imageUrl,
-            mediaType
+            data: {
+                rawText,
+                entities,
+                imageUrl,
+            }
         });
 
         // 4. Store in Qdrant
         await storeVector(qdrantId, embedding, {
             userId: id.toString(),
-            rawText,
+            memoryId: memory._id.toString(),
+            type: "chat",
             timestamp: new Date(),
+            searchableText: rawText,
+            rawText,
             entities,
             imageUrl,
             mediaType
@@ -247,8 +253,164 @@ export const addMemoryForPatient = async (req: AuthRequest, res: Response) => {
 
         res.json({
             message: 'Memory added successfully',
-            thought
+            memory
         });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Add a Photo Memory for a patient
+ */
+export const addPhotoMemoryForPatient = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { title, year, category, caption, imageUrl } = req.body;
+
+    try {
+        if (!req.user.linkedPatientIds?.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        if (!imageUrl) {
+            return res.status(400).json({ error: 'Image URL is required' });
+        }
+
+        const searchableText = `${title || ""} ${caption || ""} ${category || ""} Photo from ${year || "the past"}`.trim();
+        const embedding = await generateEmbedding(searchableText);
+
+        const qdrantId = uuidv4();
+        const memory = await Memory.create({
+            userId: id,
+            qdrantId,
+            type: "photo",
+            title,
+            year,
+            createdBy: "caregiver",
+            timestamp: new Date(),
+            data: {
+                imageUrl,
+                category,
+                caption
+            }
+        });
+
+        await storeVector(qdrantId, embedding, {
+            userId: id.toString(),
+            memoryId: memory._id.toString(),
+            type: "photo",
+            searchableText,
+            timestamp: new Date(),
+            title,
+            year,
+            category,
+            imageUrl
+        });
+
+        res.json({ message: 'Photo memory added successfully', memory });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Add a Story Memory for a patient
+ */
+export const addStoryMemoryForPatient = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { title, year, description, mood } = req.body;
+
+    try {
+        if (!req.user.linkedPatientIds?.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        if (!description) {
+            return res.status(400).json({ error: 'Description is required' });
+        }
+
+        const searchableText = `${title || ""} ${description} Mood: ${mood || ""}`.trim();
+        const embedding = await generateEmbedding(searchableText);
+
+        const qdrantId = uuidv4();
+        const memory = await Memory.create({
+            userId: id,
+            qdrantId,
+            type: "story",
+            title,
+            year,
+            createdBy: "caregiver",
+            timestamp: new Date(),
+            data: {
+                description,
+                mood
+            }
+        });
+
+        await storeVector(qdrantId, embedding, {
+            userId: id.toString(),
+            memoryId: memory._id.toString(),
+            type: "story",
+            searchableText,
+            timestamp: new Date(),
+            title,
+            year,
+            mood
+        });
+
+        res.json({ message: 'Story memory added successfully', memory });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Add a Place Memory for a patient
+ */
+export const addPlaceMemoryForPatient = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { placeName, address, category, description, photoUrl } = req.body;
+
+    try {
+        if (!req.user.linkedPatientIds?.some((pid: any) => pid.toString() === id)) {
+            return res.status(403).json({ error: 'Patient not linked to this caregiver' });
+        }
+
+        if (!placeName) {
+            return res.status(400).json({ error: 'Place name is required' });
+        }
+
+        const searchableText = `${placeName} ${address || ""} ${description || ""} ${category || ""}`.trim();
+        const embedding = await generateEmbedding(searchableText);
+
+        const qdrantId = uuidv4();
+        const memory = await Memory.create({
+            userId: id,
+            qdrantId,
+            type: "place",
+            createdBy: "caregiver",
+            timestamp: new Date(),
+            data: {
+                placeName,
+                address,
+                category,
+                description,
+                photoUrl
+            }
+        });
+
+        await storeVector(qdrantId, embedding, {
+            userId: id.toString(),
+            memoryId: memory._id.toString(),
+            type: "place",
+            searchableText,
+            timestamp: new Date(),
+            category,
+            address,
+            photoUrl
+        });
+
+        res.json({ message: 'Place memory added successfully', memory });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

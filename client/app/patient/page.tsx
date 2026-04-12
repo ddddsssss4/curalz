@@ -282,31 +282,58 @@ export default function PatientDashboard() {
                       key={result.thought?._id || `search-${index}`}
                       className="p-3"
                     >
-                      <p className="text-sm">{result.thought?.rawText}</p>
-                      {result.thought?.imageUrl && (
-                        <div className="mt-2">
-                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                           <img src={result.thought.imageUrl} alt="Memory media" className="max-h-48 rounded-md object-cover" />
+                      {result.thought?.type === 'photo' && (
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold">{result.thought.title} ({result.thought.year})</h4>
+                            <Badge>{result.thought.data?.category}</Badge>
+                          </div>
+                          {result.thought.data?.imageUrl && <img src={result.thought.data.imageUrl} alt="Memory" className="mt-2 rounded-md max-h-48 object-cover" />}
+                          <p className="mt-2 text-sm">{result.thought.data?.caption}</p>
                         </div>
                       )}
-                      {result.thought?.entities && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {result.thought.entities.people?.map(
-                            (person: string, i: number) => (
-                              <Badge
-                                key={`sp-${index}-${i}`}
-                                variant="secondary"
-                              >
-                                👤 {person}
-                              </Badge>
-                            ),
+                      {result.thought?.type === 'story' && (
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold">{result.thought.title} ({result.thought.year})</h4>
+                            <Badge variant="outline">{result.thought.data?.mood}</Badge>
+                          </div>
+                          <p className="mt-2 text-sm">{result.thought.data?.description}</p>
+                        </div>
+                      )}
+                      {result.thought?.type === 'place' && (
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold">{result.thought.data?.placeName}</h4>
+                            <Badge>{result.thought.data?.category}</Badge>
+                          </div>
+                          <p className="text-xs text-neutral-500">{result.thought.data?.address}</p>
+                          {result.thought.data?.photoUrl && <img src={result.thought.data.photoUrl} alt="Place" className="mt-2 rounded-md max-h-48 object-cover" />}
+                          <p className="mt-2 text-sm">{result.thought.data?.description}</p>
+                        </div>
+                      )}
+                      {(!result.thought?.type || result.thought?.type === 'chat') && (
+                        <div>
+                          <p className="text-sm">{result.thought?.data?.rawText || result.thought?.rawText}</p>
+                          {(result.thought?.data?.imageUrl || result.thought?.imageUrl) && (
+                            <div className="mt-2">
+                               {/* eslint-disable-next-line @next/next/no-img-element */}
+                               <img src={result.thought.data?.imageUrl || result.thought.imageUrl} alt="Memory" className="max-h-48 rounded-md object-cover" />
+                            </div>
                           )}
-                          {result.thought.entities.activities?.map(
-                            (act: string, i: number) => (
-                              <Badge key={`sa-${index}-${i}`} variant="outline">
-                                ⚡ {act}
-                              </Badge>
-                            ),
+                          {result.thought?.data?.entities && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {result.thought.data.entities.people?.map(
+                                (person: string, i: number) => (
+                                  <Badge key={`sp-${index}-${i}`} variant="secondary">👤 {person}</Badge>
+                                ),
+                              )}
+                              {result.thought.data.entities.activities?.map(
+                                (act: string, i: number) => (
+                                  <Badge key={`sa-${index}-${i}`} variant="outline">⚡ {act}</Badge>
+                                ),
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
@@ -329,34 +356,58 @@ export default function PatientDashboard() {
                       }
                       className="p-3"
                     >
-                      <p className="text-sm">{thought.rawText}</p>
-                      {thought.imageUrl && (
-                        <div className="mt-2">
-                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                           <img src={thought.imageUrl} alt="Memory" className="max-h-48 rounded-md object-cover" />
+                      {thought.type === 'photo' && (
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold">{thought.title} ({thought.year})</h4>
+                            <Badge>{thought.data?.category}</Badge>
+                          </div>
+                          {thought.data?.imageUrl && <img src={thought.data.imageUrl} alt="Memory" className="mt-2 rounded-md max-h-48 object-cover" />}
+                          <p className="mt-2 text-sm">{thought.data?.caption}</p>
                         </div>
                       )}
-                      {thought.entities && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {thought.entities.people?.map(
-                            (person: string, i: number) => (
-                              <Badge
-                                key={`person-${index}-${i}`}
-                                variant="secondary"
-                              >
-                                👤 {person}
-                              </Badge>
-                            ),
+                      {thought.type === 'story' && (
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold">{thought.title} ({thought.year})</h4>
+                            <Badge variant="outline">{thought.data?.mood}</Badge>
+                          </div>
+                          <p className="mt-2 text-sm">{thought.data?.description}</p>
+                        </div>
+                      )}
+                      {thought.type === 'place' && (
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold">{thought.data?.placeName}</h4>
+                            <Badge>{thought.data?.category}</Badge>
+                          </div>
+                          <p className="text-xs text-neutral-500">{thought.data?.address}</p>
+                          {thought.data?.photoUrl && <img src={thought.data.photoUrl} alt="Place" className="mt-2 rounded-md max-h-48 object-cover" />}
+                          <p className="mt-2 text-sm">{thought.data?.description}</p>
+                        </div>
+                      )}
+                      {(!thought.type || thought.type === 'chat') && (
+                        <div>
+                          <p className="text-sm">{thought.data?.rawText || thought.rawText}</p>
+                          {(thought.data?.imageUrl || thought.imageUrl) && (
+                            <div className="mt-2">
+                               {/* eslint-disable-next-line @next/next/no-img-element */}
+                               <img src={thought.data?.imageUrl || thought.imageUrl} alt="Memory" className="max-h-48 rounded-md object-cover" />
+                            </div>
                           )}
-                          {thought.entities.activities?.map(
-                            (activity: string, i: number) => (
-                              <Badge
-                                key={`activity-${index}-${i}`}
-                                variant="outline"
-                              >
-                                ⚡ {activity}
-                              </Badge>
-                            ),
+                          {thought.data?.entities && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {thought.data.entities.people?.map(
+                                (person: string, i: number) => (
+                                  <Badge key={`person-${index}-${i}`} variant="secondary">👤 {person}</Badge>
+                                ),
+                              )}
+                              {thought.data.entities.activities?.map(
+                                (activity: string, i: number) => (
+                                  <Badge key={`activity-${index}-${i}`} variant="outline">⚡ {activity}</Badge>
+                                ),
+                              )}
+                            </div>
                           )}
                         </div>
                       )}

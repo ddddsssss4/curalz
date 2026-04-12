@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
 import { authService, caregiverService, eventService, mediaService } from '@/lib/services';
 
@@ -22,6 +23,10 @@ export default function CaregiverDashboard() {
     const [memoryInput, setMemoryInput] = useState('');
     const [addingMemory, setAddingMemory] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const [photoForm, setPhotoForm] = useState({ title: '', year: new Date().getFullYear().toString(), category: 'Family', caption: '' });
+    const [storyForm, setStoryForm] = useState({ title: '', year: new Date().getFullYear().toString(), description: '', mood: 'Home' });
+    const [placeForm, setPlaceForm] = useState({ placeName: '', address: '', category: 'Location', description: '' });
 
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [patientEvents, setPatientEvents] = useState<any[]>([]);
@@ -104,6 +109,48 @@ export default function CaregiverDashboard() {
             
             setMemoryInput('');
             setSelectedFile(null);
+            
+            // Refresh activity
+            const data = await caregiverService.getPatientActivity(selectedPatient._id);
+            setActivity(data.activity || []);
+        } catch (error) {
+            console.error('Error adding memory:', error);
+        } finally {
+            setAddingMemory(false);
+        }
+    };
+
+    const addStructuredMemory = async (e: React.FormEvent, type: 'photo'|'story'|'place') => {
+        e.preventDefault();
+        if (!selectedPatient) return;
+        setAddingMemory(true);
+        try {
+            if (type === 'photo') {
+                let publicUrl = '';
+                if (selectedFile) {
+                    const { signedUrl, publicUrl: purl } = await mediaService.getUploadUrl(selectedFile.name, selectedFile.type);
+                    await mediaService.uploadToSupabase(signedUrl, selectedFile);
+                    publicUrl = purl;
+                }
+                const payload = { ...photoForm, imageUrl: publicUrl };
+                await caregiverService.addPhotoMemory(selectedPatient._id, payload);
+                setPhotoForm({ title: '', year: new Date().getFullYear().toString(), category: 'Family', caption: '' });
+                setSelectedFile(null);
+            } else if (type === 'story') {
+                await caregiverService.addStoryMemory(selectedPatient._id, storyForm);
+                setStoryForm({ title: '', year: new Date().getFullYear().toString(), description: '', mood: 'Home' });
+            } else if (type === 'place') {
+                let publicUrl = '';
+                if (selectedFile) {
+                    const { signedUrl, publicUrl: purl } = await mediaService.getUploadUrl(selectedFile.name, selectedFile.type);
+                    await mediaService.uploadToSupabase(signedUrl, selectedFile);
+                    publicUrl = purl;
+                }
+                const payload = { ...placeForm, photoUrl: publicUrl };
+                await caregiverService.addPlaceMemory(selectedPatient._id, payload);
+                setPlaceForm({ placeName: '', address: '', category: 'Location', description: '' });
+                setSelectedFile(null);
+            }
             
             // Refresh activity
             const data = await caregiverService.getPatientActivity(selectedPatient._id);
@@ -319,34 +366,116 @@ export default function CaregiverDashboard() {
                             </CardHeader>
                             <CardContent>
                                 {/* Add Memory Section */}
-                            <Card className="mb-4 bg-blue-50/50 border-blue-100">
-                                <CardContent className="p-3">
-                                    <form onSubmit={addMemory} className="flex flex-col gap-2">
-                                        <div className="flex gap-2 w-full">
-                                            <Input
-                                                placeholder={`Add a memory for ${selectedPatient.name}...`}
-                                                value={memoryInput}
-                                                onChange={(e) => setMemoryInput(e.target.value)}
-                                            />
-                                            <Input 
-                                                type="file" 
-                                                accept="image/*,video/*"
-                                                className="w-auto cursor-pointer"
-                                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                            />
-                                            <Button type="submit" disabled={addingMemory || (!memoryInput.trim() && !selectedFile)}>
-                                                {addingMemory ? 'Adding...' : 'Add Memory'}
-                                            </Button>
-                                        </div>
-                                    </form>
+                            <Card className="mb-4 bg-white shadow-sm border border-neutral-200">
+                                <CardHeader className="pb-2 pt-4 px-4">
+                                    <CardTitle className="text-sm font-medium">Add to Timeline</CardTitle>
+                                </CardHeader>
+                                <CardContent className="px-4 pb-4">
+                                    <Tabs defaultValue="chat" className="w-full">
+                                        <TabsList className="grid w-full grid-cols-4 mb-4">
+                                            <TabsTrigger value="chat">Chat</TabsTrigger>
+                                            <TabsTrigger value="photo">Photo</TabsTrigger>
+                                            <TabsTrigger value="story">Story</TabsTrigger>
+                                            <TabsTrigger value="place">Place</TabsTrigger>
+                                        </TabsList>
+                                        
+                                        <TabsContent value="chat">
+                                            <form onSubmit={addMemory} className="flex flex-col gap-2">
+                                                <div className="flex gap-2 w-full">
+                                                    <Input placeholder="Message or memory text..." value={memoryInput} onChange={(e) => setMemoryInput(e.target.value)} />
+                                                    <Button type="submit" disabled={addingMemory || !memoryInput.trim()}>Add Chat</Button>
+                                                </div>
+                                            </form>
+                                        </TabsContent>
+
+                                        <TabsContent value="photo">
+                                            <form onSubmit={(e) => addStructuredMemory(e, 'photo')} className="flex flex-col gap-3">
+                                                <div className="flex gap-2">
+                                                    <Input placeholder="Title" required value={photoForm.title} onChange={(e) => setPhotoForm({...photoForm, title: e.target.value})} />
+                                                    <Input placeholder="Year" type="number" value={photoForm.year} onChange={(e) => setPhotoForm({...photoForm, year: e.target.value})} />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={photoForm.category} onChange={(e) => setPhotoForm({...photoForm, category: e.target.value})}>
+                                                        {['Family', 'Travel', 'Achievement', 'Festival', 'Childhood'].map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                    <Input type="file" accept="image/*" required onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                                                </div>
+                                                <Textarea placeholder="Caption (optional)" value={photoForm.caption} onChange={(e) => setPhotoForm({...photoForm, caption: e.target.value})} />
+                                                <Button type="submit" disabled={addingMemory || !selectedFile}>Add Photo</Button>
+                                            </form>
+                                        </TabsContent>
+
+                                        <TabsContent value="story">
+                                            <form onSubmit={(e) => addStructuredMemory(e, 'story')} className="flex flex-col gap-3">
+                                                <div className="flex gap-2">
+                                                    <Input placeholder="Story Title" required value={storyForm.title} onChange={(e) => setStoryForm({...storyForm, title: e.target.value})} />
+                                                    <Input placeholder="Year" type="number" value={storyForm.year} onChange={(e) => setStoryForm({...storyForm, year: e.target.value})} />
+                                                </div>
+                                                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={storyForm.mood} onChange={(e) => setStoryForm({...storyForm, mood: e.target.value})}>
+                                                    {['Home', 'Love', 'Work', 'Travel', 'Celebrate', 'Nature', 'Learn', 'Achieve'].map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
+                                                <Textarea placeholder="Story description..." required value={storyForm.description} onChange={(e) => setStoryForm({...storyForm, description: e.target.value})} />
+                                                <Button type="submit" disabled={addingMemory}>Add Story</Button>
+                                            </form>
+                                        </TabsContent>
+
+                                        <TabsContent value="place">
+                                            <form onSubmit={(e) => addStructuredMemory(e, 'place')} className="flex flex-col gap-3">
+                                                <Input placeholder="Place Name" required value={placeForm.placeName} onChange={(e) => setPlaceForm({...placeForm, placeName: e.target.value})} />
+                                                <Input placeholder="Address" value={placeForm.address} onChange={(e) => setPlaceForm({...placeForm, address: e.target.value})} />
+                                                <div className="flex gap-2">
+                                                    <Input placeholder="Category (e.g., Cafe, Park)" value={placeForm.category} onChange={(e) => setPlaceForm({...placeForm, category: e.target.value})} />
+                                                    <Input type="file" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                                                </div>
+                                                <Textarea placeholder="Description..." value={placeForm.description} onChange={(e) => setPlaceForm({...placeForm, description: e.target.value})} />
+                                                <Button type="submit" disabled={addingMemory}>Add Place</Button>
+                                            </form>
+                                        </TabsContent>
+                                    </Tabs>
                                 </CardContent>
                             </Card>
 
                                 <div className="max-h-96 space-y-2 overflow-y-auto">
                                     {activity.map((thought) => (
                                         <Card key={thought._id} className="p-3">
-                                            <p className="text-sm">{thought.rawText}</p>
-                                            <p className="mt-1 text-xs text-neutral-500">
+                                            {thought.type === 'photo' && (
+                                                <div>
+                                                    <div className="flex justify-between items-start">
+                                                        <h4 className="font-semibold">{thought.title} ({thought.year})</h4>
+                                                        <Badge>{thought.data?.category}</Badge>
+                                                    </div>
+                                                    {thought.data?.imageUrl && <img src={thought.data.imageUrl} alt="Memory" className="mt-2 rounded-md max-h-48 object-cover" />}
+                                                    <p className="mt-2 text-sm">{thought.data?.caption}</p>
+                                                </div>
+                                            )}
+                                            {thought.type === 'story' && (
+                                                <div>
+                                                    <div className="flex justify-between items-start">
+                                                        <h4 className="font-semibold">{thought.title} ({thought.year})</h4>
+                                                        <Badge variant="outline">{thought.data?.mood}</Badge>
+                                                    </div>
+                                                    <p className="mt-2 text-sm">{thought.data?.description}</p>
+                                                </div>
+                                            )}
+                                            {thought.type === 'place' && (
+                                                <div>
+                                                    <div className="flex justify-between items-start">
+                                                        <h4 className="font-semibold">{thought.data?.placeName}</h4>
+                                                        <Badge>{thought.data?.category}</Badge>
+                                                    </div>
+                                                    <p className="text-xs text-neutral-500">{thought.data?.address}</p>
+                                                    {thought.data?.photoUrl && <img src={thought.data.photoUrl} alt="Place" className="mt-2 rounded-md max-h-48 object-cover" />}
+                                                    <p className="mt-2 text-sm">{thought.data?.description}</p>
+                                                </div>
+                                            )}
+                                            {thought.type === 'chat' && (
+                                                <div>
+                                                    <p className="text-sm">{thought.data?.rawText}</p>
+                                                    {thought.data?.imageUrl && <img src={thought.data.imageUrl} alt="Memory" className="mt-2 rounded-md max-h-48 object-cover" />}
+                                                </div>
+                                            )}
+                                            
+                                            <p className="mt-2 text-xs text-neutral-500">
                                                 {new Date(thought.timestamp).toLocaleString()}
                                             </p>
                                             {thought.entities && (

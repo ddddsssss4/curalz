@@ -146,6 +146,18 @@ export const caregiverService = {
     const response = await api.post(`/caregiver/patient/${patientId}/memory`, payload);
     return response.data;
   },
+  addPhotoMemory: async (patientId: string, data: any) => {
+    const response = await api.post(`/caregiver/patient/${patientId}/memory/photo`, data);
+    return response.data;
+  },
+  addStoryMemory: async (patientId: string, data: any) => {
+    const response = await api.post(`/caregiver/patient/${patientId}/memory/story`, data);
+    return response.data;
+  },
+  addPlaceMemory: async (patientId: string, data: any) => {
+    const response = await api.post(`/caregiver/patient/${patientId}/memory/place`, data);
+    return response.data;
+  },
   createEvent: async (patientId: string, eventData: unknown) => {
     const response = await api.post(
       `/caregiver/patient/${patientId}/event`,

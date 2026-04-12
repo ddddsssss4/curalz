@@ -167,7 +167,7 @@ export const getChatHistory = async (req: AuthRequest, res: Response) => {
   const { limit = 20, skip = 0 } = req.query;
 
   try {
-    const thoughts = await Memory.find({ userId, type: "chat" })
+    const thoughts = await Memory.find({ userId })
       .sort({ timestamp: -1 })
       .limit(Number(limit))
       .skip(Number(skip));

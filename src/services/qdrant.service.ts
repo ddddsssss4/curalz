@@ -59,14 +59,28 @@ export const storeVector = async (
     vector: number[],
     payload: {
         userId: string;
-        rawText: string;
+        memoryId?: string; // MongoDB _id reference
+        type: "photo" | "story" | "place" | "chat";
         timestamp: Date;
+        searchableText: string;
+        
+        title?: string;
+        year?: number;
+        
+        category?: string;
+        mood?: string;
+        address?: string;
+        
+        imageUrl?: string;
+        photoUrl?: string;
+        mediaType?: "image" | "video";
+        
+        // Legacy/Chat fallback
+        rawText?: string;
         entities?: {
             people?: string[];
             activities?: string[];
         };
-        imageUrl?: string;
-        mediaType?: "image" | "video";
     }
 ): Promise<void> => {
     try {

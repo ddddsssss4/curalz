@@ -110,6 +110,13 @@ export const chatService = {
   },
 };
 
+export const patientService = {
+  getMemoriesByType: async (type: string, limit = 20, skip = 0) => {
+    const response = await api.get(`/patient/memories/${type}?limit=${limit}&skip=${skip}`);
+    return response.data;
+  },
+};
+
 export const eventService = {
   getAll: async () => {
     const response = await api.get("/events");

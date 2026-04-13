@@ -15,6 +15,7 @@ import conversationRoutes from "./routes/conversation.routes";
 import chatRoutes from "./routes/chat.routes";
 import caregiverRoutes from "./routes/caregiver.routes";
 import mediaRoutes from "./routes/media.routes";
+import patientRoutes from "./routes/patient.routes";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/conversation", conversationRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/caregiver", caregiverRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/patient", patientRoutes);
 
 // Swagger Documentation
 const swaggerDocument = YAML.load(path.join(__dirname, "../docs/swagger.yaml"));

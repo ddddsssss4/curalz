@@ -268,6 +268,31 @@ paths:
                   relevantMemories:
                     type: integer
 
+  /chat/message/stream:
+    post:
+      summary: Send a message and receive streamed AI response (SSE)
+      tags: [Chat]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              required: [message]
+      responses:
+        200:
+          description: Streamed AI response via SSE
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Event-stream chunks (meta, chunk, error, done)
+
   /chat/history:
     get:
       summary: Get conversation history
@@ -440,6 +465,44 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Memory'
+
+  /patient/memories/{type}:
+    get:
+      summary: Get memories by specific type
+      tags: [Patient]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: type
+          schema:
+            type: string
+            enum: [chat, photo, story, place]
+          required: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: List of memories for the requested type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Memory'
+                  count:
+                    type: integer
 
   /caregiver/patient/{id}/memory:
     post:

@@ -115,6 +115,14 @@ export const patientService = {
     const response = await api.get(`/patient/memories/${type}?limit=${limit}&skip=${skip}`);
     return response.data;
   },
+  createContact: async (data: { name: string, relationship: string, phoneNumber: string }) => {
+    const response = await api.post("/patient/contacts", data);
+    return response.data;
+  },
+  getContacts: async () => {
+    const response = await api.get("/patient/contacts");
+    return response.data;
+  },
 };
 
 export const eventService = {

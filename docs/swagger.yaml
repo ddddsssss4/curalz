@@ -37,6 +37,28 @@ components:
         - email
         - role
 
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        name:
+          type: string
+        relationship:
+          type: string
+        phoneNumber:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - userId
+        - name
+        - relationship
+        - phoneNumber
+
     Event:
       type: object
       properties:
@@ -503,6 +525,53 @@ paths:
                       $ref: '#/components/schemas/Memory'
                   count:
                     type: integer
+
+  /patient/contacts:
+    get:
+      summary: Get all emergency or personal contacts for a patient
+      tags: [Patient]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contacts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+    post:
+      summary: Add a new contact for a patient
+      tags: [Patient]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                relationship:
+                  type: string
+                phoneNumber:
+                  type: string
+              required: [name, relationship, phoneNumber]
+      responses:
+        201:
+          description: Contact created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        400:
+          description: Invalid input or duplicate phone number
 
   /caregiver/patient/{id}/memory:
     post:

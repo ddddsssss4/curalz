@@ -16,6 +16,7 @@ import chatRoutes from "./routes/chat.routes";
 import caregiverRoutes from "./routes/caregiver.routes";
 import mediaRoutes from "./routes/media.routes";
 import patientRoutes from "./routes/patient.routes";
+import elevenlabsRoutes from "./routes/elevenlabs.route";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/caregiver", caregiverRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/patient", patientRoutes);
+app.use("/api/elevenlabs", elevenlabsRoutes);
 
 // Swagger Documentation
 const swaggerDocument = YAML.load(path.join(__dirname, "../docs/swagger.yaml"));

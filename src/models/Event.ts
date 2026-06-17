@@ -6,9 +6,7 @@ export interface IEvent extends Document {
     description?: string;
     datetime: Date;
     importance: 'low' | 'medium' | 'high';
-    reminderOffsets: number[]; // Array of minutes before event
     createdBy: mongoose.Types.ObjectId;
-    reminderStatus: 'pending' | 'sent' | 'failed';
 }
 
 const EventSchema: Schema = new Schema({
@@ -17,9 +15,7 @@ const EventSchema: Schema = new Schema({
     description: { type: String },
     datetime: { type: Date, required: true },
     importance: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
-    reminderOffsets: [{ type: Number }],
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    reminderStatus: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' },
 }, {
     timestamps: true,
 });

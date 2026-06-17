@@ -7,14 +7,6 @@ export const createEvent = async (eventData: Partial<IEvent>) => {
 };
 
 export const getEvents = async (query: any) => {
-  const now = new Date();
-
-  // Auto-mark any past events that are still pending as already sent
-  await Event.updateMany(
-    { ...query, datetime: { $lt: now }, reminderStatus: "pending" },
-    { $set: { reminderStatus: "sent" } },
-  );
-
   return await Event.find(query).sort({ datetime: 1 });
 };
 

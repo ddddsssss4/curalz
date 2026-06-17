@@ -421,7 +421,7 @@ export const addPlaceMemoryForPatient = async (req: AuthRequest, res: Response) 
  */
 export const createEventForPatient = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const { title, description, datetime, importance, reminderOffsets } = req.body;
+    const { title, description, datetime, importance } = req.body;
 
     try {
         if (req.user.role !== 'caregiver') {
@@ -456,8 +456,6 @@ export const createEventForPatient = async (req: AuthRequest, res: Response) => 
             description,
             datetime,
             importance,
-            reminderOffsets: reminderOffsets || [15],
-            reminderStatus: 'pending',
             createdBy: req.user._id
         });
 

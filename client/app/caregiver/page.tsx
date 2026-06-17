@@ -38,7 +38,6 @@ export default function CaregiverDashboard() {
         description: '',
         datetime: '',
         importance: 'medium' as 'low' | 'medium' | 'high',
-        reminderOffsets: [15],
     });
 
     useEffect(() => {
@@ -181,7 +180,6 @@ export default function CaregiverDashboard() {
                 description: '',
                 datetime: '',
                 importance: 'medium',
-                reminderOffsets: [15],
             });
             setEditingEventId(null);
             setIsEventModalOpen(false);
@@ -213,7 +211,6 @@ export default function CaregiverDashboard() {
             description: '',
             datetime: '',
             importance: 'medium',
-            reminderOffsets: [15],
         });
         setIsEventModalOpen(true);
     };
@@ -225,7 +222,6 @@ export default function CaregiverDashboard() {
             description: event.description || '',
             datetime: new Date(event.datetime).toISOString().slice(0, 16), // Format for input type="datetime-local"
             importance: event.importance,
-            reminderOffsets: event.reminderOffsets || [15],
         });
         setIsEventModalOpen(true);
     };
